@@ -1,4 +1,4 @@
-function [th3d,th1d,alpha,epsilon]=control_params_three_link
+function [th3d,th1d,alpha,epsilon,dth1d]=control_params_three_link
 %control_params_three_link.m
 %
 %   Control parameters for three-link legged biped.
@@ -19,5 +19,6 @@ function [th3d,th1d,alpha,epsilon]=control_params_three_link
 
 th3d=pi/6;  % desired angle of torso
 th1d=pi/8;  % impact occurs with walking surface
+dth1d = 1.55;
 alpha=0.9;  % see page 14 of Grizzle paper
 epsilon=0.1; % see page 16 of Grizzle paper

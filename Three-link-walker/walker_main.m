@@ -17,7 +17,7 @@
 function varargout = walker_main(t,x,flag,opt_param)
 
 if nargin == 0
-	flag = 'demo';
+	flag = 'optimize';
 end
 
 switch flag
@@ -27,10 +27,13 @@ switch flag
 		[varargout{1:3}] = events(t,x);
 	case 'demo'                             % Run a demo.
 		demo;
-	otherwise
+    case 'optimize'  
+        optimize;
+    otherwise
 		error(['Unknown flag ''' flag '''.']);
 end
 
+end
 
 %% --------------------------------------------------------------------------
 %% This is the system dynamics function
@@ -59,7 +62,7 @@ y = [y ; H.'];
 [f_tan,f_norm] = stance_force_three_link(x(1:6),dx(1:6),u);
 force = [force ; f_tan f_norm];
 
-
+end % f
 %% --------------------------------------------------------------------------
 %% Locate the time when critical angle of stance leg minus stance leg angle
 %% passes through zero in a decreasing direction and stop integration.
@@ -88,6 +91,78 @@ else % no events, just watch him fall!!
 	direction=1;
 end
 
+end %events
+
+%% --------------------------------------------------------------------------
+%% a optimize function
+
+
+function optimize
+
+global t_2 torque y force
+
+torque = [];
+t_2 = [];
+y = [];
+force = [];
+
+tstart = 0;
+tfinal = 13;
+
+fun = @objfun; % the objective function, nested below
+cfun = @constr; % the constraint function, nested below
+
+%% The optimization parameters
+degree = 3;
+outputs = 2;
+a0 = -pi + 2*pi*rand(1,outputs*degree +1); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+
+lb = -pi*ones(1,length(a0));
+ub = pi*ones(1,length(a0));
+
+% Call fmincon
+opts = optimoptions('fmincon','UseParallel',true);
+a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
+print(a_star)
+
+    function y = objfun(a)
+        x_init = sigma_three_link(a);
+        x0 = transition_three_link(x_init).';
+        x0 = x0(1:6);
+
+        options = odeset('Events','on','Refine',4,'RelTol',10^-5,'AbsTol',10^-6);
+
+        % Solve until the first terminal event.
+        [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
+        
+        y = sum(torque'*torque);
+    end    
+
+    function [c,ceq] = constr(a)
+        x0 = sigma_three_link(a);
+        x0 = transition_three_link(x0).';
+        x0 = x0(1:6);
+
+        options = odeset('Events','on','Refine',4,'RelTol',10^-5,'AbsTol',10^-6);
+
+        % Solve until the first terminal event.
+        [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
+        [th3d,th1d,alpha,epsilon] = control_params_three_link;
+        
+        ceq = [x(end,1) - th1d;
+               x(end,2) + th1d;
+               x(end,3) - th3d;
+               x(end,4) - dth1d;
+               x(end,5) - x_init(5);
+               x(end,6) - x_init(6)]; 
+        
+        c = [-min(force(:,2));
+              max(abs(force(:,1))/force(:,2)) - 0.8];
+              
+    end
+
+
+end %optimize
 
 %% --------------------------------------------------------------------------
 %% a demo function
@@ -108,8 +183,7 @@ tfinal = 13;
 %
 a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
-omega_1 = 1.55;
-x0 = sigma_three_link(omega_1,a);
+x0 = sigma_three_link(a);
 x0 = transition_three_link(x0).';
 x0 = x0(1:6);
 
@@ -151,6 +225,7 @@ end
 
 disp('by Eric R. Westervelt, Jessy W. Grizzle,');
 disp('Christine Chevallereau, Jun-Ho Choi, and Benjamin Morris');
+
 
 
 %% Draw some useful graphs
@@ -215,6 +290,7 @@ grid
 % Run the animation
 anim(tout,xout,1/30,1);
 
+end %demo
 
 %% --------------------------------------------------------------------------
 %% the animation function
@@ -334,6 +410,7 @@ for k=2:n
 	pause(ts*speed);
 end
 
+end %anim
 
 %% --------------------------------------------------------------------------
 %% a function to calculate hip velocity
@@ -342,7 +419,7 @@ function [vV,vH] = hip_vel(x)
 
 vV=zeros(length(x),1);
 vH=cos(x(:,1)).*x(:,4); % estimate of horizontal velocity of hips
-
+end 
 
 %% --------------------------------------------------------------------------
 %% a function to calculate the limb position
@@ -356,7 +433,7 @@ pFoot1=[pH_horiz; 0];
 pH=[pFoot1(1)+r*sin(q(1)); pFoot1(2)+r*cos(q(1))];
 pFoot2=[pH(1)-r*sin(q(2)); pH(2)-r*cos(q(2))];
 pT=[pH(1)+L*sin(q(3)); pH(2)+L*cos(q(3))];
-
+end
 
 %% --------------------------------------------------------------------------
 %% CONVERTS A RANDOMLY SAMPLED SIGNAL SET INTO AN EVENLY SAMPLED SIGNAL SET
@@ -379,4 +456,6 @@ Et = linspace(t0, tf, EM)';
 % and re-sample each signal to obtain the evenly sampled forms
 for s = 1:N,
 	Ex(:,s) = interp1(t(:,1), x(:,s), Et(:,1));
+end
+
 end
