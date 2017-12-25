@@ -115,7 +115,7 @@ cfun = @constr; % the constraint function, nested below
 %% The optimization parameters
 degree = 3;
 outputs = 2;
-a0 = -pi + 2*pi*rand(1,outputs*degree +1); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+a0 = -pi + 2*pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
 lb = -pi*ones(1,length(a0));
 ub = pi*ones(1,length(a0));
@@ -135,19 +135,19 @@ print(a_star)
         % Solve until the first terminal event.
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
         
-        y = sum(torque'*torque);
+        y = sum(torque(:,1)'*torque(:,1) + torque(:,2)'*torque(:,2));
     end    
 
     function [c,ceq] = constr(a)
-        x0 = sigma_three_link(a);
-        x0 = transition_three_link(x0).';
+        x_init = sigma_three_link(a);
+        x0 = transition_three_link(x_init).';
         x0 = x0(1:6);
 
         options = odeset('Events','on','Refine',4,'RelTol',10^-5,'AbsTol',10^-6);
 
         % Solve until the first terminal event.
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
-        [th3d,th1d,alpha,epsilon] = control_params_three_link;
+        [th3d,th1d,alpha,epsilon,dth1d] = control_params_three_link;
         
         ceq = [x(end,1) - th1d;
                x(end,2) + th1d;
@@ -157,7 +157,7 @@ print(a_star)
                x(end,6) - x_init(6)]; 
         
         c = [-min(force(:,2));
-              max(abs(force(:,1))/force(:,2)) - 0.8];
+              max(abs(force(:,1))./force(:,2)) - 0.8];
               
     end
 
