@@ -38,7 +38,7 @@ end
 %% --------------------------------------------------------------------------
 %% This is the system dynamics function
 
-function dx = f(t,x,a)
+function [dx,u,f_tan,f_norm] = f(t,x,a)
 
 global t_2 torque y force
 
@@ -154,12 +154,12 @@ plot(t_2,force(:,2))
         ceq = [x(end,1) - th1d;
                x(end,2) + th1d;
                x(end,3) - th3d;
-               x(end,4) - dth1d;
-               x(end,5) - x_init(5);
-               x(end,6) - x_init(6)]; 
-%         c = [];    
-        c = [-force(:,2);
-              max(abs(force(:,1))./force(:,2)) - 0.8];
+               x(end,4) - dth1d];
+%                x(end,5) - x_init(5);
+%                x(end,6) - x_init(6)]; 
+         c = [];    
+%         c = -force(:,2);
+%               max(abs(force(:,1))./force(:,2)) - 0.8];
         
         c' 
         ceq'
@@ -185,8 +185,10 @@ tstart = 0;
 tfinal = 13;
 
 %% The optimization parameters
-%
-a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+% Jessy's values
+% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+% Only with constraints on desired th1, th1_dot, th2 and th3
+a = [-0.2680 2.8575 -0.9186 -3.1416 -0.0208 0.9293 -3.1416 3.1416];
 
 x0 = sigma_three_link(a);
 x0 = transition_three_link(x0).';
