@@ -40,7 +40,7 @@ end
 
 function [dx,u,f_tan,f_norm] = f(t,x,a)
 
-global t_2 torque y force
+global t_2 torque y force 
 
 [D,C,G,B,K,dV,dVl,Al,Bl,H,LfH,dLfH] = dynamics_three_link(x(1:6),a);
 Fx = inv(D)*(-C*x(4:6)-G);
@@ -61,6 +61,7 @@ t_2 = [t_2 ; t];
 y = [y ; H.'];
 [f_tan,f_norm] = stance_force_three_link(x(1:6),dx(1:6),u);
 force = [force ; f_tan f_norm];
+
 
 end % f
 %% --------------------------------------------------------------------------
@@ -99,7 +100,7 @@ end %events
 
 function optimize
 
-global t_2 torque y force
+global t_2 torque y force 
 
 torque = [];
 t_2 = [];
@@ -124,7 +125,7 @@ ub = pi*ones(1,length(a0));
 opts = optimoptions('fmincon','UseParallel',true,'Algorithm','interior-point');
 a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
 disp(a_star)
-plot(t_2,force(:,2))
+% plot(time_local,force_local(:,2))
 
     function y = objfun(a)
         x_init = sigma_three_link(a);
@@ -136,7 +137,13 @@ plot(t_2,force(:,2))
         % Solve until the first terminal event.
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
         
-        y = sum((trapz(t_2,torque)).^2) ; %sum(torque(:,1)'*torque(:,1) + torque(:,2)'*torque(:,2));
+        u = zeros(length(t),2);
+        for i = 1:length(t)
+            [~,u_step,~,~] = f(t(i),x(i,:)',a);
+            u(i,:) = u_step;
+        end
+        
+        y = sum((trapz(t,u)).^2) ; %sum(torque(:,1)'*torque(:,1) + torque(:,2)'*torque(:,2));
         y
     end    
 
@@ -154,12 +161,21 @@ plot(t_2,force(:,2))
         ceq = [x(end,1) - th1d;
                x(end,2) + th1d;
                x(end,3) - th3d;
-               x(end,4) - dth1d];
-%                x(end,5) - x_init(5);
-%                x(end,6) - x_init(6)]; 
+               x(end,4) - dth1d;
+               x(end,5) - x_init(5);
+               x(end,6) - x_init(6)]; 
          c = [];    
-%         c = -force(:,2);
-%               max(abs(force(:,1))./force(:,2)) - 0.8];
+         
+        f_tan = zeros(length(t),1);
+        f_norm = zeros(length(t),1);
+        for i = 1:length(t)
+            [~,~,f_tan_step,f_norm_step] = f(t(i),x(i,:)',a);
+            f_tan(i) = f_tan_step;
+            f_norm(i) = f_norm_step;
+        end
+%         c = -f_norm;
+%              f_tan./f_norm - 0.8;
+%             -f_tan./f_norm + 0.8];
         
         c' 
         ceq'
