@@ -17,7 +17,7 @@
 function varargout = walker_main(t,x,flag,opt_param)
 
 if nargin == 0
-	flag = 'optimize';
+	flag = 'optimize'; %'demo'; %
 end
 
 switch flag
@@ -115,15 +115,16 @@ cfun = @constr; % the constraint function, nested below
 %% The optimization parameters
 degree = 3;
 outputs = 2;
-a0 = -pi + 2*pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
 lb = -pi*ones(1,length(a0));
 ub = pi*ones(1,length(a0));
 
 % Call fmincon
-opts = optimoptions('fmincon','UseParallel',true);
+opts = optimoptions('fmincon','UseParallel',true,'Algorithm','interior-point');
 a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
-print(a_star)
+disp(a_star)
+plot(t_2,force(:,2))
 
     function y = objfun(a)
         x_init = sigma_three_link(a);
@@ -135,7 +136,8 @@ print(a_star)
         % Solve until the first terminal event.
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
         
-        y = sum(torque(:,1)'*torque(:,1) + torque(:,2)'*torque(:,2));
+        y = sum((trapz(t_2,torque)).^2) ; %sum(torque(:,1)'*torque(:,1) + torque(:,2)'*torque(:,2));
+        y
     end    
 
     function [c,ceq] = constr(a)
@@ -155,10 +157,13 @@ print(a_star)
                x(end,4) - dth1d;
                x(end,5) - x_init(5);
                x(end,6) - x_init(6)]; 
-        
-        c = [-min(force(:,2));
+%         c = [];    
+        c = [-force(:,2);
               max(abs(force(:,1))./force(:,2)) - 0.8];
-              
+        
+        c' 
+        ceq'
+    
     end
 
 
