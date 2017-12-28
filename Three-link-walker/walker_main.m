@@ -17,7 +17,7 @@
 function varargout = walker_main(t,x,flag,opt_param)
 
 if nargin == 0
-	flag = 'optimize'; %'demo'; %
+	flag = 'demo'; %'optimize'; % 
 end
 
 switch flag
@@ -116,13 +116,15 @@ cfun = @constr; % the constraint function, nested below
 %% The optimization parameters
 degree = 3;
 outputs = 2;
-a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+% a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+a0 =   [0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
+
 
 lb = -pi*ones(1,length(a0));
 ub = pi*ones(1,length(a0));
 
 % Call fmincon
-opts = optimoptions('fmincon','UseParallel',true,'Algorithm','interior-point','TolFun' ,1e-3);
+opts = optimoptions('fmincon','UseParallel',true,'Algorithm','sqp','TolFun' ,1e-3,'MaxFunEvals' ,10000);
 a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
 disp(a_star)
 % plot(time_local,force_local(:,2))
@@ -164,7 +166,8 @@ disp(a_star)
                x(end,4) - dth1d;
                x(end,5) - x_init(5);
                x(end,6) - x_init(6)]; 
-%          c = [];    
+         
+%        c = [];    
          
         f_tan = zeros(length(t),1);
         f_norm = zeros(length(t),1);
@@ -173,9 +176,9 @@ disp(a_star)
             f_tan(i) = f_tan_step;
             f_norm(i) = f_norm_step;
         end
-        c = [-min(f_norm);
+       c = [-min(f_norm);
              max(f_tan./f_norm) - 0.8;
-            -min(f_tan./f_norm) + 0.8];
+            -min(f_tan./f_norm) - 0.8 ];
         
         c' 
         ceq'
@@ -205,9 +208,10 @@ tfinal = 13;
 % a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 % Only with constraints on desired th1, th1_dot, th2 and th3
 % a = [-0.2680 2.8575 -0.9186 -3.1416 -0.0208 0.9293 -3.1416 3.1416];
-% With Contraints on velocity periodicity
-a = [0.7089 -1.2293 3.1266 -3.1416 1.3858 3.1416 -1.4203 3.1416];
-
+% With Constraints on velocity periodicity (satisfied ` 1e-5)
+a = [ 0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
+% With constraints on desired config, periodicity (<= 1e-5) and grf ineqs
+a = [ 0.4840   -0.5366    2.5876   -2.4559    1.9032   -1.1257   -1.2527   -0.9097];
 
 x0 = sigma_three_link(a);
 x0 = transition_three_link(x0).';
