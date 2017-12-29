@@ -160,12 +160,12 @@ disp(a_star)
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
         [th3d,th1d,alpha,epsilon,dth1d] = control_params_three_link;
         
-        ceq = [x(end,1) - th1d;
-               x(end,2) + th1d;
-               x(end,3) - th3d;
-               x(end,4) - dth1d;
-               x(end,5) - x_init(5);
-               x(end,6) - x_init(6)]; 
+        ceq = [x(end,1) - th1d; %% stance leg angle periodicity constraint
+               x(end,2) + th1d; %% swing leg angle periodicity constraint
+               x(end,3) - th3d; %% torso angle periodicity constraint
+               x(end,4) - dth1d; %% stance leg velocity periodicity constraint
+               x(end,5) - x_init(5); %% swing leg velocity periodicity constraint
+               x(end,6) - x_init(6)]; %% torso velocity periodicity constraint
          
 %        c = [];    
          
@@ -176,9 +176,9 @@ disp(a_star)
             f_tan(i) = f_tan_step;
             f_norm(i) = f_norm_step;
         end
-       c = [-min(f_norm);
-             max(f_tan./f_norm) - 0.8;
-            -min(f_tan./f_norm) - 0.8 ];
+       c = [-min(f_norm);                  %% normal force > 0 forall t
+             max(f_tan./f_norm) - 0.8;     %% mu < 0.8 forall t
+            -min(f_tan./f_norm) - 0.8 ];   %% mu > -0.8 
         
         c' 
         ceq'
@@ -205,13 +205,13 @@ tfinal = 13;
 
 %% The optimization parameters
 % Jessy's values
-% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89]; %% step_time = 1.12 s and WorkDone^2 = 573.3944
 % Only with constraints on desired th1, th1_dot, th2 and th3
 % a = [-0.2680 2.8575 -0.9186 -3.1416 -0.0208 0.9293 -3.1416 3.1416];
-% With Constraints on velocity periodicity (satisfied ` 1e-5)
-a = [ 0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
+% With Constraints on velocity periodicity (satisfied to 1e-5)
+% a = [ 0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
 % With constraints on desired config, periodicity (<= 1e-5) and grf ineqs
-a = [ 0.4840   -0.5366    2.5876   -2.4559    1.9032   -1.1257   -1.2527   -0.9097];
+a = [ 0.4840   -0.5366    2.5876   -2.4559    1.9032   -1.1257   -1.2527   -0.9097];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
 
 x0 = sigma_three_link(a);
 x0 = transition_three_link(x0).';
