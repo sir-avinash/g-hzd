@@ -17,7 +17,7 @@
 function varargout = walker_main(t,x,flag,opt_param)
 
 if nargin == 0
-	flag = 'optimize'; % 'demo'; %
+	flag =  'demo'; %'optimize'; %
 end
 
 switch flag
@@ -120,15 +120,15 @@ cfun = @constr; % the constraint function, nested below
 %% The optimization parameters
 degree = 3;
 outputs = 1;
-% a0 = rand(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
-a0 = [-0.8862    1.0974    0.8436    0.3636];
+% a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+a0 = [ 0.8912   -1.0845   -3.1416   -3.0201];
 
 
-lb = -0.5*pi*ones(1,length(a0));
-ub = 0.5*pi*ones(1,length(a0));
+lb = -pi*ones(1,length(a0));
+ub = pi*ones(1,length(a0));
 
 % Call fmincon
-opts = optimoptions('fmincon','UseParallel',true,'Algorithm','sqp','TolFun' ,1e-3,'MaxFunEvals' ,10000);
+opts = optimoptions('fmincon','UseParallel',true,'Algorithm','interior-point','TolFun' ,1e-3,'MaxFunEvals' ,10000);
 a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
 disp(a_star)
 % plot(time_local,force_local(:,2))
@@ -165,12 +165,12 @@ disp(a_star)
         [th1d,alpha,epsilon,dth1d] = control_params_two_link;
         
         ceq = [x(end,1) - th1d; %% stance leg angle periodicity constraint
-               x(end,2) + th1d]; %% swing leg angle periodicity constraint
-               %x(end,3) - dth1d; %% stance leg velocity periodicity constraint
-               %x(end,4) - x_init(4)]; %% swing leg velocity periodicity constraint
+               x(end,2) + th1d; %% swing leg angle periodicity constraint
+               x(end,3) - dth1d; %% stance leg velocity periodicity constraint
+               x(end,4) - x_init(4)]; %% swing leg velocity periodicity constraint
 %                x(end,6) - x_init(6)]; %% torso velocity periodicity constraint
          
-       c = [];    
+%        c = [];    
          
 %         f_tan = zeros(length(t),1);
 %         f_norm = zeros(length(t),1);
@@ -179,11 +179,11 @@ disp(a_star)
 %             f_tan(i) = f_tan_step;
 %             f_norm(i) = f_norm_step;
 %         end
-%        c = [-min(f_norm);                  %% normal force > 0 forall t
-%              max(f_tan./f_norm) - 0.8;     %% mu < 0.8 forall t
-%             -min(f_tan./f_norm) - 0.8 ];   %% mu > -0.8 
+       c = [-min(f_norm);                  %% normal force > 0 forall t
+             max(f_tan./f_norm) - 0.8;     %% mu < 0.8 forall t
+            -min(f_tan./f_norm) - 0.8 ];   %% mu > -0.8 
 %         
-%         c' 
+        c' 
         ceq'
     
     end
@@ -208,13 +208,13 @@ tfinal = 13;
 
 %% The optimization parameters
 % Jessy's values
-% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89]; %% step_time = 1.12 s and WorkDone^2 = 573.3944
-% Only with constraints on desired th1, th1_dot, th2 and th3
-% a = [-0.2680 2.8575 -0.9186 -3.1416 -0.0208 0.9293 -3.1416 3.1416];
+% a = [-2.27 3.26 3.11 1.89]; %% step_time = 1.12 s and WorkDone^2 = 573.3944
+% Only with constraints on desired th1, th2 
+% a = [-2.4279 3.1401 0.2898 2.9101];
 % With Constraints on velocity periodicity (satisfied to 1e-5)
-% a = [ 0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
+% a = [ ];
 % With constraints on desired config, periodicity (<= 1e-5) and grf ineqs
-a = [ 1.9032   -1.1257   -1.2527   -0.9097];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
+a = [0.9446   -1.4946   -3.1416    3.1191];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
 
 x0 = sigma_two_link(a);
 x0 = transition_two_link(x0).';
@@ -250,9 +250,9 @@ for i = 1:5 % run five steps
 %     x_minus = sigma_two_link(a);
 %     x_plus = transition_two_link(x_minus);
 %     x_init = xe;
-%     x_minus(4:6)
-%     x_plus(4:6)
-%     x_init(4:6)
+%     x_minus(3:4)
+%     x_plus(3:4)
+%     x_init(3:4)
     
 	% Only positions and velocities needed as initial conditions
 	x0=x0(1:4);
