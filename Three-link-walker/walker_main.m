@@ -17,7 +17,7 @@
 function varargout = walker_main(t,x,flag,opt_param)
 
 if nargin == 0
-	flag = 'demo'; %'optimize'; % 
+	flag = 'demo'; % 'optimize'; %
 end
 
 switch flag
@@ -117,7 +117,7 @@ cfun = @constr; % the constraint function, nested below
 degree = 3;
 outputs = 2;
 % a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
-a0 =   [0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
+a0 = [0.4844   -0.5322    2.5901   -2.4967    1.9518   -0.5703   -2.0453    0.6470] ;
 
 
 lb = -pi*ones(1,length(a0));
@@ -177,8 +177,8 @@ disp(a_star)
             f_norm(i) = f_norm_step;
         end
        c = [-min(f_norm);                  %% normal force > 0 forall t
-             max(f_tan./f_norm) - 0.8;     %% mu < 0.8 forall t
-            -min(f_tan./f_norm) - 0.8 ];   %% mu > -0.8 
+             max(f_tan./f_norm) - 0.6;     %% mu < 0.6 forall t
+            -min(f_tan./f_norm) - 0.6 ];   %% mu > -0.6 
         
         c' 
         ceq'
@@ -211,8 +211,9 @@ tfinal = 13;
 % With Constraints on velocity periodicity (satisfied to 1e-5)
 % a = [ 0.6376   -0.9768    2.2780   -1.3496    2.3750   -3.1416    1.8753   -0.4997];
 % With constraints on desired config, periodicity (<= 1e-5) and grf ineqs
-a = [ 0.4840   -0.5366    2.5876   -2.4559    1.9032   -1.1257   -1.2527   -0.9097];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
-
+%a = [ 0.4840   -0.5366    2.5876   -2.4559    1.9032   -1.1257   -1.2527   -0.9097];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
+% With constraints incl. mu <=0.6 (satisfied to 1e-5)
+a = [0.4844   -0.5322    2.5901   -2.4967    1.9518   -0.5703   -2.0453    0.6470];
 x0 = sigma_three_link(a);
 x0 = transition_three_link(x0).';
 x0 = x0(1:6);
