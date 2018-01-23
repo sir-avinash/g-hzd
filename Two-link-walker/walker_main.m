@@ -120,15 +120,16 @@ cfun = @constr; % the constraint function, nested below
 %% The optimization parameters
 degree = 3;
 outputs = 1;
+[th1d,alpha,epsilon,dth1d]=control_params_two_link();
 % a0 = zeros(1,outputs*(degree +1));%-pi/2 + pi*rand(1,outputs*(degree +1)); %[0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
-a0 = [ 0.8912   -1.0845   -3.1416   -3.0201];
+a0 = [ -1.2775    1.1102   -2.4536   -2.5073    0.1984    1.2000];
 
 
-lb = -pi*ones(1,length(a0));
-ub = pi*ones(1,length(a0));
+lb = [-pi*ones(1,length(a0)-2) pi/20 1.0];
+ub = [pi*ones(1,length(a0)-2) pi 3.0];
 
 % Call fmincon
-opts = optimoptions('fmincon','UseParallel',true,'Algorithm','interior-point','TolFun' ,1e-3,'MaxFunEvals' ,10000);
+opts = optimoptions('fmincon','UseParallel',true,'Algorithm','sqp','TolFun' ,1e-3,'MaxFunEvals' ,10000);
 a_star = fmincon(fun,a0,[],[],[],[],lb,ub,cfun,opts);
 disp(a_star)
 % plot(time_local,force_local(:,2))
@@ -164,24 +165,26 @@ disp(a_star)
         [t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
         [th1d,alpha,epsilon,dth1d] = control_params_two_link;
         
-        ceq = [x(end,1) - th1d; %% stance leg angle periodicity constraint
-               x(end,2) + th1d; %% swing leg angle periodicity constraint
-               x(end,3) - dth1d; %% stance leg velocity periodicity constraint
+        ceq = [x(end,1) - x_init(1); %% stance leg angle periodicity constraint
+               x(end,2) - x_init(2); %% swing leg angle periodicity constraint
+               x(end,3) - x_init(3); %% stance leg velocity periodicity constraint
                x(end,4) - x_init(4)]; %% swing leg velocity periodicity constraint
 %                x(end,6) - x_init(6)]; %% torso velocity periodicity constraint
          
 %        c = [];    
          
-%         f_tan = zeros(length(t),1);
-%         f_norm = zeros(length(t),1);
-%         for i = 1:length(t)
-%             [~,~,f_tan_step,f_norm_step] = f(t(i),x(i,:)',a);
-%             f_tan(i) = f_tan_step;
-%             f_norm(i) = f_norm_step;
-%         end
+        f_tan = zeros(length(t),1);
+        f_norm = zeros(length(t),1);
+        for i = 1:length(t)
+            [~,~,f_tan_step,f_norm_step] = f(t(i),x(i,:)',a);
+            f_tan(i) = f_tan_step;
+            f_norm(i) = f_norm_step;
+        end
        c = [-min(f_norm);                  %% normal force > 0 forall t
              max(f_tan./f_norm) - 0.8;     %% mu < 0.8 forall t
-            -min(f_tan./f_norm) - 0.8 ];   %% mu > -0.8 
+            -min(f_tan./f_norm) - 0.8;     %% mu > -0.8 
+             -(x_init(1) - th1d);          %% stance angle must be >= 12 degs (th1d)
+             -(x_init(3) - dth1d)];        %% stance vel must be >= 0.7 rad/s (dth1d)  
 %         
         c' 
         ceq'
@@ -214,7 +217,7 @@ tfinal = 13;
 % With Constraints on velocity periodicity (satisfied to 1e-5)
 % a = [ ];
 % With constraints on desired config, periodicity (<= 1e-5) and grf ineqs
-a = [0.9446   -1.4946   -3.1416    3.1191];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
+a = [ -1.2775    1.1102   -2.4536   -2.5073    0.1984    1.2000];  %% step_time = 0.8113 s and WorkDone^2 = 585.5679
 
 x0 = sigma_two_link(a);
 x0 = transition_two_link(x0).';
@@ -229,7 +232,7 @@ teout = []; xeout = []; ieout = [];
 disp('(impact ratio is the ratio of tangential to normal');
 disp('forces of the tip of the swing leg at impact)');
 
-for i = 1:5 % run five steps
+for i = 1:10 % run five steps
 	% Solve until the first terminal event.
 	[t,x,te,xe,ie] = ode45('walker_main',[tstart tfinal],x0,options,a);
 

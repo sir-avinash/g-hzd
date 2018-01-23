@@ -17,7 +17,7 @@ function [th1d,alpha,epsilon,dth1d]=control_params_two_link
 % Eric Westervelt
 % 20 February 2007
 
-th1d=pi/12;  % impact occurs with walking surface
-dth1d = 2;
-alpha=0.9;  % see page 14 of Grizzle paper
-epsilon=0.1; % see page 16 of Grizzle paper
+th1d=pi/15;  % impact occurs with walking surface
+dth1d = 1.2;
+alpha=0.95;  % see page 14 of Grizzle paper
+epsilon=0.12; % see page 16 of Grizzle paper
